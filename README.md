@@ -1,8 +1,8 @@
-# Chat Engine OpenGraph Example
+# Chat Engine Muter Example
 
-This is the example of how to add opengraph to your Chat Engine project using react with the chat engine plugin.
+This is the example of how to add muting to your Chat Engine project using react with the chat engine plugin.
 
-<a href="https://dashboard.pubnub.com/signup?devrel_gh=Chat-Engine-OpenGraph">
+<a href="https://dashboard.pubnub.com/signup?devrel_gh=Chat-Engine-Muter">
     <img alt="PubNub Signup" src="https://i.imgur.com/og5DDjf.png" width=260 height=97/>
 </a>
 
@@ -16,7 +16,7 @@ You'll need to clone the repo then install all the dependencies using a package 
 
 
 ```
-git clone https://github.com/nxsyed/Chat-Engine-OpenGraph.git master
+git clone https://github.com/nxsyed/Chat-Application-Muting.git master
 npm i
 ```
 
@@ -30,7 +30,6 @@ npm build
 ## Built With
 
 * [Chat Engine](https://www.pubnub.com/docs/chat-engine/getting-started) - SDK for building realtime chat
-* [OpenGraph](https://www.opengraph.io/) - For fetching meta tags
 * [Reactjs](https://reactjs.org/) - Library for creating the project
 
 
