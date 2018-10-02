@@ -1,6 +1,10 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
+import ChatEngineCore from 'chat-engine';
+import muter from 'chat-engine-muter';
+import Message from './Messages';
+import UserList from './UserList';
 
 import { withStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
@@ -8,8 +12,24 @@ import CardActions from '@material-ui/core/CardActions';
 import CardContent from '@material-ui/core/CardContent';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import Input from '@material-ui/core/Input';
+
+const now = new Date().getTime();
+const username = ['user', now].join('-');
+
+
+const ChatClient = ChatEngineCore.create({
+    publishKey: 'pub-c-3f89be1a-7cca-4307-8884-80b5b4855b23',
+    subscribeKey: 'sub-c-83c785b0-b219-11e8-acd6-a622109c830d'
+}, {
+    globalChannel: 'chatting'
+});
+
+ChatClient.connect(username, {
+  signedOnTime: now
+}, 'auth-key');
 
 const styles = {
   card: {
@@ -34,6 +54,9 @@ class App extends Component {
 
   constructor(props) {
     super(props);
+    this.chat = new ChatClient.Chat('muter');
+    this.chat.plugin(muter());
+
     this.state = {
       messages: [],
       chatInput: '' 
@@ -42,6 +65,10 @@ class App extends Component {
 
   sendChat = () => {
     if (this.state.chatInput) {
+        this.chat.emit('message', {
+            text: this.state.chatInput,
+            uuid: username
+        });
         this.setState({ chatInput: '' })
     }
 
@@ -49,6 +76,23 @@ class App extends Component {
 
   setChatInput = (event) => {
     this.setState({ chatInput: event.target.value })
+  }
+
+  componentDidMount() {
+    this.chat.on('message', (payload) => {
+        const { uuid, text } = payload.data;
+
+        let messages = this.state.messages;
+        if(!this.chat.muter.isMuted(uuid)){
+          messages.push(
+            <Message key={ this.state.messages.length } uuid={ uuid } text={ text }/>
+          );
+          this.setState({
+              messages: messages
+          });
+        }
+        
+    });
   }
 
   handleKeyPress = (e) => {
@@ -62,6 +106,14 @@ class App extends Component {
     return(
       <Card className={classes.card} >
           <CardContent>
+            <UserList users={this.chat.users} callback={(uuid, muteState) => {
+              if(muteState){
+                this.chat.muter.mute(uuid);
+              } else {
+                this.chat.muter.unmute(uuid);
+              }
+            }}> 
+            </UserList>
             <Typography gutterBottom variant="headline" component="h2">
               Messages
             </Typography>
@@ -69,7 +121,7 @@ class App extends Component {
                 <List component="nav">
                   <ListItem>
                   <Typography component="div">
-                    Messages will go here
+                    { this.state.messages }
                   </Typography>
                   </ListItem>
                 </List>
@@ -86,6 +138,12 @@ class App extends Component {
                 'aria-label': 'Description',
               }}
             />
+            <Button size="small" color="primary" link="https://github.com/nxsyed/Chat-Engine-OpenGraph">
+              Github
+            </Button>
+            <Button size="small" color="primary">
+              Article
+            </Button>
           </CardActions>
         </Card>
       );
@@ -94,4 +152,6 @@ class App extends Component {
 
 const ChatComponent = withStyles(styles)(App);
 
-ReactDOM.render(<ChatComponent />, document.getElementById('root'));
+ChatClient.on('$.ready', () => {
+    ReactDOM.render(<ChatComponent />, document.getElementById('root'));
+});
