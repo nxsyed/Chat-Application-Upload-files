@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import ChatEngineCore from 'chat-engine';
-import muter from 'chat-engine-muter';
+import uploadcare from 'chat-engine-uploadcare';
+import Uploadcare from 'uploadcare-widget';
 import Message from './Messages';
-import UserList from './UserList';
 
 import { withStyles } from '@material-ui/core/styles';
 import Card from '@material-ui/core/Card';
@@ -33,13 +33,7 @@ ChatClient.connect(username, {
 
 const styles = {
   card: {
-    maxWidth: 345
-  },
-  openCard:{
-    maxWidth: 200
-  },
-  openMedia: {
-    height: 80,
+    maxWidth: 545
   },
   media: {
     objectFit: 'cover',
@@ -55,7 +49,7 @@ class App extends Component {
   constructor(props) {
     super(props);
     this.chat = new ChatClient.Chat('muter');
-    this.chat.plugin(muter());
+    this.chat.plugin(uploadcare());
 
     this.state = {
       messages: [],
@@ -78,21 +72,34 @@ class App extends Component {
     this.setState({ chatInput: event.target.value })
   }
 
-  componentDidMount() {
-    this.chat.on('message', (payload) => {
-        const { uuid, text } = payload.data;
 
-        let messages = this.state.messages;
-        if(!this.chat.muter.isMuted(uuid)){
+  componentDidMount() {
+    console.log(Uploadcare, uploadcare);
+    const widget = Uploadcare.Widget('[role=uploadcare-uploader]');
+    this.chat.uploadcare.bind(widget);
+
+    let messages = this.state.messages;
+
+    this.chat.on('message', (payload) => {
+          const { uuid, text } = payload.data;
           messages.push(
             <Message key={ this.state.messages.length } uuid={ uuid } text={ text }/>
           );
           this.setState({
               messages: messages
           });
-        }
-        
     });
+
+    this.chat.on('$uploadcare.upload', (payload) => {
+      console.log(payload);
+        messages.push(
+          <Message key={ this.state.messages.length } uuid={ payload.sender.uuid } text={ `${payload.data.name} -> ${payload.data.cdnUrl}` }/>
+        );
+        this.setState({
+            messages: messages
+        });
+    });
+
   }
 
   handleKeyPress = (e) => {
@@ -106,14 +113,6 @@ class App extends Component {
     return(
       <Card className={classes.card} >
           <CardContent>
-            <UserList users={this.chat.users} callback={(uuid, muteState) => {
-              if(muteState){
-                this.chat.muter.mute(uuid);
-              } else {
-                this.chat.muter.unmute(uuid);
-              }
-            }}> 
-            </UserList>
             <Typography gutterBottom variant="headline" component="h2">
               Messages
             </Typography>
@@ -138,6 +137,7 @@ class App extends Component {
                 'aria-label': 'Description',
               }}
             />
+            <Input type="hidden" role="uploadcare-uploader" name="my_file" />
             <Button size="small" color="primary" link="https://github.com/nxsyed/Chat-Engine-OpenGraph">
               Github
             </Button>
